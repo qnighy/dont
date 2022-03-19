@@ -13,7 +13,7 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    match execute(&args) {
+    match execute(&DefaultController, &args) {
         Conclusion::Exit(code) => {
             std::process::exit(code);
         }
@@ -39,7 +39,7 @@ fn main() {
     }
 }
 
-fn execute(args: &Args) -> Conclusion {
+fn execute<C: Controller>(ctl: &C, args: &Args) -> Conclusion {
     if args.command.len() == 0 {
         // Just "dont". What is the right reaction to the command?
         return Conclusion::Exit(0);
@@ -54,6 +54,14 @@ fn execute(args: &Args) -> Conclusion {
             return Conclusion::Exit(0);
         }
         return Conclusion::Exec(args.command[1..].to_owned());
+    } else if args.command[0] == "ls" && ctl.has_command("sl") {
+        return Conclusion::Exec(vec![OsString::from("sl")].into_iter().chain(args.command[1..].iter().cloned()).collect());
+    } else if args.command[0] == "sl" {
+        return Conclusion::Exec(vec![OsString::from("ls")].into_iter().chain(args.command[1..].iter().cloned()).collect());
+    } else if args.command[0] == "vim" && ctl.has_command("emacs") {
+        return Conclusion::Exec(vec![OsString::from("emacs")].into_iter().chain(args.command[1..].iter().cloned()).collect());
+    } else if args.command[0] == "emacs" && ctl.has_command("vim") {
+        return Conclusion::Exec(vec![OsString::from("vim")].into_iter().chain(args.command[1..].iter().cloned()).collect());
     }
     Conclusion::Exit(0)
 }
@@ -64,57 +72,164 @@ enum Conclusion {
     Exec(Vec<OsString>),
 }
 
+#[cfg_attr(test, mockall::automock)]
+trait Controller {
+    fn has_command(&self, name: &str) -> bool;
+}
+
+#[derive(Debug)]
+struct DefaultController;
+
+impl Controller for DefaultController {
+    fn has_command(&self, name: &str) -> bool {
+        which::which(name).is_ok()
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mockall::predicate::*;
 
-    fn main(args: &[&str]) -> Result<Conclusion, clap::Error> {
+    fn main(ctl: &MockController, args: &[&str]) -> Result<Conclusion, clap::Error> {
         // TODO: resolve unwrap correctly
         let args = Args::try_parse_from(args)?;
-        Ok(execute(&args))
+        Ok(execute(ctl, &args))
     }
 
     #[test]
     fn test_help() {
-        let e = main(&["dont", "--help"]).unwrap_err();
+        let ctl = MockController::new();
+        let e = main(&ctl, &["dont", "--help"]).unwrap_err();
         let msg = e.to_string();
         assert!(msg.contains("USAGE:"), "Expected message to contain \"USAGE:\", got {}", msg);
     }
 
     #[test]
     fn test_true() {
-        let concl = main(&["dont", "true"]).unwrap();
+        let ctl = MockController::new();
+        let concl = main(&ctl, &["dont", "true"]).unwrap();
         assert_eq!(concl, Conclusion::Exit(1));
     }
 
     #[test]
     fn test_true_with_dashes() {
-        let concl = main(&["dont", "--", "true"]).unwrap();
+        let ctl = MockController::new();
+        let concl = main(&ctl, &["dont", "--", "true"]).unwrap();
         assert_eq!(concl, Conclusion::Exit(1));
     }
 
     #[test]
     fn test_false() {
-        let concl = main(&["dont", "false"]).unwrap();
+        let ctl = MockController::new();
+        let concl = main(&ctl, &["dont", "false"]).unwrap();
         assert_eq!(concl, Conclusion::Exit(0));
     }
 
     #[test]
     fn test_dont() {
-        let concl = main(&["dont", "dont", "ls"]).unwrap();
+        let ctl = MockController::new();
+        let concl = main(&ctl, &["dont", "dont", "ls"]).unwrap();
         assert_eq!(concl, Conclusion::Exec(vec!["ls".into()]));
     }
 
     #[test]
     fn test_dont_with_dashes() {
-        let concl = main(&["dont", "--", "dont", "ls"]).unwrap();
+        let ctl = MockController::new();
+        let concl = main(&ctl, &["dont", "--", "dont", "ls"]).unwrap();
         assert_eq!(concl, Conclusion::Exec(vec!["ls".into()]));
     }
 
     #[test]
     fn test_dont_with_wrong_dashes() {
-        let concl = main(&["dont", "dont", "--", "ls"]).unwrap();
+        let ctl = MockController::new();
+        let concl = main(&ctl, &["dont", "dont", "--", "ls"]).unwrap();
         assert_eq!(concl, Conclusion::Exec(vec!["--".into(), "ls".into()]));
+    }
+
+    #[test]
+    fn test_ls() {
+        let mut ctl = MockController::new();
+        ctl.expect_has_command().with(eq("sl")).returning(|_| false);
+        let concl = main(&ctl, &["dont", "ls"]).unwrap();
+        assert_eq!(concl, Conclusion::Exit(0));
+    }
+
+    #[test]
+    fn test_ls_when_sl_exists() {
+        let mut ctl = MockController::new();
+        ctl.expect_has_command().with(eq("sl")).returning(|_| true);
+        let concl = main(&ctl, &["dont", "ls"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["sl".into()]));
+    }
+
+    #[test]
+    fn test_ls_with_args_when_sl_exists() {
+        let mut ctl = MockController::new();
+        ctl.expect_has_command().with(eq("sl")).returning(|_| true);
+        let concl = main(&ctl, &["dont", "ls", "foo"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["sl".into(), "foo".into()]));
+    }
+
+    #[test]
+    fn test_sl() {
+        let ctl = MockController::new();
+        let concl = main(&ctl, &["dont", "sl"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["ls".into()]));
+    }
+
+    #[test]
+    fn test_sl_with_args() {
+        let ctl = MockController::new();
+        let concl = main(&ctl, &["dont", "sl", "foo"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["ls".into(), "foo".into()]));
+    }
+
+    #[test]
+    fn test_vim() {
+        let mut ctl = MockController::new();
+        ctl.expect_has_command().with(eq("emacs")).returning(|_| false);
+        let concl = main(&ctl, &["dont", "vim"]).unwrap();
+        assert_eq!(concl, Conclusion::Exit(0));
+    }
+
+    #[test]
+    fn test_vim_when_emacs_exists() {
+        let mut ctl = MockController::new();
+        ctl.expect_has_command().with(eq("emacs")).returning(|_| true);
+        let concl = main(&ctl, &["dont", "vim"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["emacs".into()]));
+    }
+
+    #[test]
+    fn test_vim_with_args_when_emacs_exists() {
+        let mut ctl = MockController::new();
+        ctl.expect_has_command().with(eq("emacs")).returning(|_| true);
+        let concl = main(&ctl, &["dont", "vim", "foo"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["emacs".into(), "foo".into()]));
+    }
+
+    #[test]
+    fn test_emacs() {
+        let mut ctl = MockController::new();
+        ctl.expect_has_command().with(eq("vim")).returning(|_| false);
+        let concl = main(&ctl, &["dont", "emacs"]).unwrap();
+        assert_eq!(concl, Conclusion::Exit(0));
+    }
+
+    #[test]
+    fn test_emacs_when_vim_exists() {
+        let mut ctl = MockController::new();
+        ctl.expect_has_command().with(eq("vim")).returning(|_| true);
+        let concl = main(&ctl, &["dont", "emacs"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["vim".into()]));
+    }
+
+    #[test]
+    fn test_emacs_with_args_when_vim_exists() {
+        let mut ctl = MockController::new();
+        ctl.expect_has_command().with(eq("vim")).returning(|_| true);
+        let concl = main(&ctl, &["dont", "emacs", "foo"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["vim".into(), "foo".into()]));
     }
 }
