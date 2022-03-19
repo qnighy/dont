@@ -30,8 +30,8 @@ It doesn't list the contents of the current directory.
 dont dont echo "hello world"
 ```
 
-It doesn't follow your second `dont`. That means... oh yes.
+It doesn't follow your second `dont`. That means... uh oh.
 
 ### Contributing
 
-If you find something `dont` doesn't properly negate your intentions, feel free to submit a pull request.
+If you find cases where `dont` doesn't properly negate your intentions, feel free to submit a pull request.
