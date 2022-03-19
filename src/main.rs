@@ -1,3 +1,6 @@
+// Copyright 2022 Masaki Hara
+// See LICENSE.txt and LICENSE-Apache-2.0.txt for the license.
+
 use std::ffi::OsString;
 use std::io;
 

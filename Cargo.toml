@@ -13,8 +13,6 @@ license = "MIT OR Apache-2.0"
 keywords = ["command", "joke", "tool", "utility"]
 categories = ["command-line-utilities"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 cfg-if = "1.0.0"
 clap = { version = "3.1.6", features = ["derive"] }
