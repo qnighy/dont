@@ -1,7 +1,17 @@
 [package]
 name = "dont"
+description = "swiss army knife for everything you do not want to do"
 version = "0.1.0"
 edition = "2021"
+
+authors = [
+    "Masaki Hara <ackie.h.gmai@gmail.com>",
+]
+homepage = "https://github.com/qnighy/dont"
+repository = "https://github.com/qnighy/dont"
+license = "MIT OR Apache-2.0"
+keywords = ["command", "joke", "tool", "utility"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
