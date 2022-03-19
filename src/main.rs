@@ -1,5 +1,6 @@
 use std::ffi::OsString;
 
+use cfg_if::cfg_if;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -16,10 +17,21 @@ fn main() {
             std::process::exit(code);
         }
         Conclusion::Exec(args) => {
-            std::process::Command::new(&args[0])
-                .args(&args[1..])
-                .spawn()
-                .expect("failed to execute command");
+            cfg_if! {
+                if #[cfg(unix)] {
+                    use std::os::unix::process::CommandExt;
+                    use std::process::Command;
+                    let mut command = Command::new(&args[0]);
+                    command.args(&args[1..]);
+                    command.exec();
+                    panic!("failed to execute command");
+                } else {
+                    use std::process::Command;
+                    let mut command = Command::new(&args[0]);
+                    command.args(&args[1..]);
+                    command.spawn().unwrap("failed to execute command");
+                }
+            }
         }
     }
 }
