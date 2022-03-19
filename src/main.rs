@@ -26,12 +26,19 @@ fn main() {
 
 fn execute(args: &Args) -> Conclusion {
     if args.command.len() == 0 {
+        // Just "dont". What is the right reaction to the command?
         return Conclusion::Exit(0);
     }
     if args.command[0] == "true" {
         return Conclusion::Exit(1);
     } else if args.command[0] == "false" {
         return Conclusion::Exit(0);
+    } else if args.command[0] == "dont" {
+        if args.command.len() == 1 {
+            // Just "dont dont". What is the right reaction to the command?
+            return Conclusion::Exit(0);
+        }
+        return Conclusion::Exec(args.command[1..].to_owned());
     }
     Conclusion::Exit(0)
 }
@@ -76,5 +83,23 @@ mod tests {
     fn test_false() {
         let concl = main(&["dont", "false"]).unwrap();
         assert_eq!(concl, Conclusion::Exit(0));
+    }
+
+    #[test]
+    fn test_dont() {
+        let concl = main(&["dont", "dont", "ls"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["ls".into()]));
+    }
+
+    #[test]
+    fn test_dont_with_dashes() {
+        let concl = main(&["dont", "--", "dont", "ls"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["ls".into()]));
+    }
+
+    #[test]
+    fn test_dont_with_wrong_dashes() {
+        let concl = main(&["dont", "dont", "--", "ls"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["--".into(), "ls".into()]));
     }
 }
