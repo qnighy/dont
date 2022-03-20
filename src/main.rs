@@ -24,6 +24,7 @@ fn main() {
             use std::process::Command;
             let mut command = Command::new(&args[0]);
             command.args(&args[1..]);
+            #[allow(clippy::needless_late_init)]
             let result: Result<(), io::Error>;
             cfg_if! {
                 if #[cfg(unix)] {
@@ -47,7 +48,7 @@ fn main() {
 }
 
 fn execute<C: Controller>(ctl: &C, args: &Args) -> Conclusion {
-    if args.command.len() == 0 {
+    if args.command.is_empty() {
         // Just "dont". What is the right reaction to the command?
         return Conclusion::Exit(0);
     }
