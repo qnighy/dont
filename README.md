@@ -32,6 +32,10 @@ dont dont echo "hello world"
 
 It doesn't follow your second `dont`. That means... uh oh.
 
+### License
+
+MIT or Apache-2.0. See LICENSE.txt and LICENSE-Apache-2.0.txt.
+
 ### Contributing
 
 If you find cases where `dont` doesn't properly negate your intentions, feel free to submit a pull request. Be sure to include a test case.
