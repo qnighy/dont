@@ -34,4 +34,12 @@ It doesn't follow your second `dont`. That means... uh oh.
 
 ### Contributing
 
-If you find cases where `dont` doesn't properly negate your intentions, feel free to submit a pull request.
+If you find cases where `dont` doesn't properly negate your intentions, feel free to submit a pull request. Be sure to include a test case.
+
+Check your code by executing the following:
+
+```
+cargo test
+cargo fmt
+cargo clippy
+```
