@@ -34,7 +34,11 @@ fn main() {
                 }
             }
             if let Err(e) = result {
-                let command_description = args.into_iter().map(|x| x.to_string_lossy().into_owned()).collect::<Vec<_>>().join(" ");
+                let command_description = args
+                    .into_iter()
+                    .map(|x| x.to_string_lossy().into_owned())
+                    .collect::<Vec<_>>()
+                    .join(" ");
                 eprintln!("Failed to run {}: {}", command_description, e);
                 std::process::exit(1);
             }
@@ -58,13 +62,33 @@ fn execute<C: Controller>(ctl: &C, args: &Args) -> Conclusion {
         }
         return Conclusion::Exec(args.command[1..].to_owned());
     } else if args.command[0] == "ls" && ctl.has_command("sl") {
-        return Conclusion::Exec(vec![OsString::from("sl")].into_iter().chain(args.command[1..].iter().cloned()).collect());
+        return Conclusion::Exec(
+            vec![OsString::from("sl")]
+                .into_iter()
+                .chain(args.command[1..].iter().cloned())
+                .collect(),
+        );
     } else if args.command[0] == "sl" {
-        return Conclusion::Exec(vec![OsString::from("ls")].into_iter().chain(args.command[1..].iter().cloned()).collect());
+        return Conclusion::Exec(
+            vec![OsString::from("ls")]
+                .into_iter()
+                .chain(args.command[1..].iter().cloned())
+                .collect(),
+        );
     } else if args.command[0] == "vim" && ctl.has_command("emacs") {
-        return Conclusion::Exec(vec![OsString::from("emacs")].into_iter().chain(args.command[1..].iter().cloned()).collect());
+        return Conclusion::Exec(
+            vec![OsString::from("emacs")]
+                .into_iter()
+                .chain(args.command[1..].iter().cloned())
+                .collect(),
+        );
     } else if args.command[0] == "emacs" && ctl.has_command("vim") {
-        return Conclusion::Exec(vec![OsString::from("vim")].into_iter().chain(args.command[1..].iter().cloned()).collect());
+        return Conclusion::Exec(
+            vec![OsString::from("vim")]
+                .into_iter()
+                .chain(args.command[1..].iter().cloned())
+                .collect(),
+        );
     }
     Conclusion::Exit(0)
 }
@@ -105,7 +129,11 @@ mod tests {
         let ctl = MockController::new();
         let e = main(&ctl, &["dont", "--help"]).unwrap_err();
         let msg = e.to_string();
-        assert!(msg.contains("USAGE:"), "Expected message to contain \"USAGE:\", got {}", msg);
+        assert!(
+            msg.contains("USAGE:"),
+            "Expected message to contain \"USAGE:\", got {}",
+            msg
+        );
     }
 
     #[test]
@@ -191,7 +219,9 @@ mod tests {
     #[test]
     fn test_vim() {
         let mut ctl = MockController::new();
-        ctl.expect_has_command().with(eq("emacs")).returning(|_| false);
+        ctl.expect_has_command()
+            .with(eq("emacs"))
+            .returning(|_| false);
         let concl = main(&ctl, &["dont", "vim"]).unwrap();
         assert_eq!(concl, Conclusion::Exit(0));
     }
@@ -199,7 +229,9 @@ mod tests {
     #[test]
     fn test_vim_when_emacs_exists() {
         let mut ctl = MockController::new();
-        ctl.expect_has_command().with(eq("emacs")).returning(|_| true);
+        ctl.expect_has_command()
+            .with(eq("emacs"))
+            .returning(|_| true);
         let concl = main(&ctl, &["dont", "vim"]).unwrap();
         assert_eq!(concl, Conclusion::Exec(vec!["emacs".into()]));
     }
@@ -207,7 +239,9 @@ mod tests {
     #[test]
     fn test_vim_with_args_when_emacs_exists() {
         let mut ctl = MockController::new();
-        ctl.expect_has_command().with(eq("emacs")).returning(|_| true);
+        ctl.expect_has_command()
+            .with(eq("emacs"))
+            .returning(|_| true);
         let concl = main(&ctl, &["dont", "vim", "foo"]).unwrap();
         assert_eq!(concl, Conclusion::Exec(vec!["emacs".into(), "foo".into()]));
     }
@@ -215,7 +249,9 @@ mod tests {
     #[test]
     fn test_emacs() {
         let mut ctl = MockController::new();
-        ctl.expect_has_command().with(eq("vim")).returning(|_| false);
+        ctl.expect_has_command()
+            .with(eq("vim"))
+            .returning(|_| false);
         let concl = main(&ctl, &["dont", "emacs"]).unwrap();
         assert_eq!(concl, Conclusion::Exit(0));
     }
