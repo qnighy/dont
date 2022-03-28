@@ -92,9 +92,10 @@ fn execute<C: Controller>(ctl: &C, args: &Args) -> Conclusion {
         );
     } else if args.command[0] == "test" {
         return Conclusion::Exec(
-            vec![OsString::from("test"), OsString::from("!")]
+            vec![OsString::from("test"), OsString::from("!"), OsString::from("(")]
                 .into_iter()
                 .chain(args.command[1..].iter().cloned())
+                .chain(vec![OsString::from(")")])
                 .collect(),
         );
     } else if args.command[0] == "[" {
@@ -298,6 +299,6 @@ mod tests {
     fn test_test_with_args() {
         let ctl = MockController::new();
         let concl = main(&ctl, &["dont", "test", "!", "-f", "foo"]).unwrap();
-        assert_eq!(concl, Conclusion::Exec(vec!["test".into(), "!".into(), "!".into(), "-f".into(), "foo".into()]));
+        assert_eq!(concl, Conclusion::Exec(vec!["test".into(), "!".into(), "(".into(), "!".into(), "-f".into(), "foo".into(), ")".into()]));
     }
 }
