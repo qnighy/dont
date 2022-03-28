@@ -21,13 +21,23 @@ fn main() {
             std::process::exit(code);
         }
         Conclusion::Exec(args) => {
-            use std::process::Command;
+            cfg_if! {
+                if #[cfg(windows)] {
+                    use exec::Command;
+                    type ResultError = Result<(), exec::Error>;
+                } else {
+                    use std::process::Command;
+                    type ResultError = Result<(), io::Error>;
+                }
+            }
             let mut command = Command::new(&args[0]);
             command.args(&args[1..]);
             #[allow(clippy::needless_late_init)]
-            let result: Result<(), io::Error>;
+            let result: ResultError;
             cfg_if! {
-                if #[cfg(unix)] {
+                if #[cfg(windows)] {
+                    result = Err(command.exec());
+                } else if #[cfg(unix)] {
                     use std::os::unix::process::CommandExt;
                     result = Err(command.exec());
                 } else {
