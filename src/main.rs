@@ -90,6 +90,20 @@ fn execute<C: Controller>(ctl: &C, args: &Args) -> Conclusion {
                 .chain(args.command[1..].iter().cloned())
                 .collect(),
         );
+    } else if args.command[0] == "test" {
+        return Conclusion::Exec(
+            vec![OsString::from("test"), OsString::from("!")]
+                .into_iter()
+                .chain(args.command[1..].iter().cloned())
+                .collect(),
+        );
+    } else if args.command[0] == "[" {
+        return Conclusion::Exec(
+            vec![OsString::from("["), OsString::from("!")]
+                .into_iter()
+                .chain(args.command[1..].iter().cloned())
+                .collect(),
+        );
     }
     Conclusion::Exit(0)
 }
@@ -271,5 +285,19 @@ mod tests {
         ctl.expect_has_command().with(eq("vim")).returning(|_| true);
         let concl = main(&ctl, &["dont", "emacs", "foo"]).unwrap();
         assert_eq!(concl, Conclusion::Exec(vec!["vim".into(), "foo".into()]));
+    }
+
+    #[test]
+    fn test_bracket_with_args() {
+        let ctl = MockController::new();
+        let concl = main(&ctl, &["dont", "[", "!", "-f", "foo", "]"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["[".into(), "!".into(), "!".into(), "-f".into(), "foo".into(), "]".into()]));
+    }
+
+    #[test]
+    fn test_test_with_args() {
+        let ctl = MockController::new();
+        let concl = main(&ctl, &["dont", "test", "!", "-f", "foo"]).unwrap();
+        assert_eq!(concl, Conclusion::Exec(vec!["test".into(), "!".into(), "!".into(), "-f".into(), "foo".into()]));
     }
 }
