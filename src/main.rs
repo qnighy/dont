@@ -22,7 +22,7 @@ fn main() {
         }
         Conclusion::Exec(args) => {
             cfg_if! {
-                if #[cfg(windows)] {
+                if #[cfg(feature = "windows_exec")] {
                     use exec::Command;
                     type ResultError = Result<(), exec::Error>;
                 } else {
@@ -35,7 +35,7 @@ fn main() {
             #[allow(clippy::needless_late_init)]
             let result: ResultError;
             cfg_if! {
-                if #[cfg(windows)] {
+                if #[cfg(feature = "windows_exec")] {
                     result = Err(command.exec());
                 } else if #[cfg(unix)] {
                     use std::os::unix::process::CommandExt;
